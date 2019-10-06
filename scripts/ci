@@ -4,5 +4,5 @@ set -e
 cd $(dirname $0)/..
 
 ./scripts/download
-./scripts/build
-./scripts/package
+./scripts/build-pi3
+./scripts/package-pi3

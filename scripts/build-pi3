@@ -15,7 +15,7 @@ echo "`yellow [START]` build kernel and modules..."
 	pushd ${DOWNLOADS}/kernel
 		# add kernel branding for rancheros
 		sed -i 's/^EXTRAVERSION =.*/EXTRAVERSION = -rancheros/g' Makefile
-		export LOCALVERSION=""
+		export LOCALVERSION="-pi3"
 
 		# configure the kernel
 		$MAKE_CMD $DEF_CONFIG
@@ -27,7 +27,7 @@ echo "`yellow [START]` build kernel and modules..."
 		echo "v$KERNEL_VERSION-rancher" > /source/dist/version
 
 		# copy .config to the /source/build/kernel directory
-		cp .config /source/build/kernel/$KERNEL_RELEASE.config
+		cp .config /source/build/kernel-pi3/$KERNEL_RELEASE.config
 
 		# build kernel and modules
 		$MAKE_CMD Image modules dtbs
