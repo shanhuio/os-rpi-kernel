@@ -5,7 +5,7 @@ source $(dirname $0)/color
 cd $(dirname $0)/..
 
 echo "`yellow [STARTING]` prepare directories..."
-	mkdir -p ${DOWNLOADS}/kernel ${DOWNLOADS}/firmware build/kernel-pi3 build/firmware
+	mkdir -p ${DOWNLOADS}/kernel ${DOWNLOADS}/firmware build/kernel-pi3 build/kernel-pi4 build/firmware
 echo "`green [FINISHED]` prepare directories..."
 
 echo "`yellow [STARTING]` git clone requirements..."

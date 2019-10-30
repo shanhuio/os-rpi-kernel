@@ -1,0 +1,58 @@
+#!/bin/bash
+set -e
+
+source $(dirname $0)/color
+cd $(dirname $0)/..
+
+export KERNEL_VERSION=$(cat /source/dist/kernelrelease)
+
+: ${PACKAGE_KERNEL_DIR:=/source/dist/kernel-pi4}
+: ${PACKAGE_FIRMWARE_DIR:=/source/dist/firmware-pi4}
+: ${INSTALL_DIR:=$KERNEL_VERSION}
+: ${KERNEL_CONFIG:=$KERNEL_VERSION.config}
+echo $KERNEL_VERSION
+
+echo "`yellow [STARTING]` prepare package directories..."
+	mkdir -p $PACKAGE_KERNEL_DIR
+	mkdir -p $PACKAGE_FIRMWARE_DIR
+echo "`green [FINISHED]` prepare package directories..."
+
+echo "`yellow [STARTING]` package kernel files..."
+	pushd ${DOWNLOADS}/kernel
+		echo tar -cvzf $KERNEL_VERSION.tar.gz -C $INSTALL_DIR .
+		tar -cvzf $KERNEL_VERSION.tar.gz -C $INSTALL_DIR .
+		sha256sum $KERNEL_VERSION.tar.gz > $KERNEL_VERSION.tar.gz.sha256
+	popd
+echo "`green [FINISHED]` package kernel files..."
+
+echo "`yellow [STARTING]` package boot files..."
+	pushd ${DOWNLOADS}/kernel
+		tar -cvzf bootfiles-pi4.tar.gz -C $INSTALL_DIR/boot .
+		sha256sum bootfiles-pi4.tar.gz > bootfiles-pi4.tar.gz.sha256
+	popd
+echo "`green [FINISHED]` package boot files..."
+
+echo "`yellow [START]` package firmware files..."
+	pushd ${DOWNLOADS}/firmware
+		FILE_LIST="
+		boot/LICENCE.*
+		boot/bootcode.bin
+		boot/fixup4*.dat
+		boot/start4*.elf
+		"
+		tar -cvzf rpi-bootloader-pi4.tar.gz $FILE_LIST
+		sha256sum rpi-bootloader-pi4.tar.gz > rpi-bootloader-pi4.tar.gz.sha256
+	popd
+echo "`green [FINISHED]` build firmware files..."
+
+echo "`yellow [STARTING]` copy necessary files to the dest..."
+	pushd ${DOWNLOADS}/kernel
+		cp $KERNEL_VERSION.tar.gz* $PACKAGE_KERNEL_DIR
+		cp bootfiles-pi4.tar.gz* $PACKAGE_KERNEL_DIR
+		cp /source/build/kernel-pi4/$KERNEL_CONFIG $PACKAGE_KERNEL_DIR
+	popd
+	pushd ${DOWNLOADS}/firmware
+		cp rpi-bootloader-pi4.tar.gz* $PACKAGE_FIRMWARE_DIR
+	popd
+echo "`green [FINISHED]` copy necessary files to the dest..."
+

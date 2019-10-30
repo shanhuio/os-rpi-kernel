@@ -1,0 +1,54 @@
+#!/bin/bash
+set -e
+
+source $(dirname $0)/color
+cd $(dirname $0)/..
+
+DEF_CONFIG=${DEFCONFIG:="bcm2711_defconfig"}
+MAKE_CMD="make -j $(nproc) ARCH=$KERNEL_ARCH"
+if [ $ARCH != $KERNEL_ARCH ]
+then
+	MAKE_CMD="${MAKE_CMD} CROSS_COMPILE=aarch64-linux-gnu-"
+fi
+
+echo "`yellow [START]` build kernel and modules..."
+	pushd ${DOWNLOADS}/kernel
+		# add kernel branding for rancheros
+		sed -i 's/^EXTRAVERSION =.*/EXTRAVERSION = -rancheros/g' Makefile
+		export LOCALVERSION="-pi4"
+
+		# configure the kernel
+		$MAKE_CMD $DEF_CONFIG
+
+		# Save information about the built kernel
+		KERNEL_RELEASE=$($MAKE_CMD kernelrelease | grep "^[45]")
+		KERNEL_VERSION=$($MAKE_CMD kernelversion | grep "^[45]")
+		echo "$KERNEL_RELEASE" > /source/dist/kernelrelease
+		echo "v$KERNEL_VERSION-rancher" > /source/dist/version
+
+		# copy .config to the /source/build/kernel directory
+		cp .config /source/build/kernel-pi4/$KERNEL_RELEASE.config
+
+		# build kernel and modules
+		$MAKE_CMD Image modules dtbs
+
+		# install kernel modules
+		INSTALL_DIR=${DOWNLOADS}/kernel/$KERNEL_RELEASE
+		if [[ -d $INSTALL_DIR ]]; then
+			rm -rf $INSTALL_DIR
+			mkdir -p $INSTALL_DIR
+		fi
+		$MAKE_CMD INSTALL_MOD_PATH=$INSTALL_DIR modules_install
+		rm $INSTALL_DIR/lib/modules/$KERNEL_RELEASE/{build,source}
+
+		# build kernel modules' dependencies
+		depmod -a -b $INSTALL_DIR $KERNEL_RELEASE
+
+		# install kernel, dtb and overlays
+		mkdir -p $INSTALL_DIR/boot/overlays
+		cp arch/arm64/boot/Image $INSTALL_DIR/boot/kernel8-pi4.img
+		cp arch/arm64/boot/dts/broadcom/bcm2711*.dtb $INSTALL_DIR/boot/
+		cp arch/arm64/boot/dts/broadcom/bcm2711*.dts $INSTALL_DIR/boot/
+		cp arch/arm64/boot/dts/overlays/*.dtbo $INSTALL_DIR/boot/overlays/
+	popd
+echo "`green [FINISHED]` build kernel and modules..."

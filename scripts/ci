@@ -6,3 +6,5 @@ cd $(dirname $0)/..
 ./scripts/download
 ./scripts/build-pi3
 ./scripts/package-pi3
+./scripts/build-pi4
+./scripts/package-pi4
